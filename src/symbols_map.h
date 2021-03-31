@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                /// 
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -17,6 +17,7 @@ struct Symbol
 	int64_t			m_offset;
 	uint64_t		m_size;
 	uint32_t		m_line;
+	uint32_t		m_nameHash;
 	rtm_string		m_file;
 	rtm_string		m_name;
 

@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                ///
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-struct rtmLibInterface;
+typedef struct _rtmLibInterface rtmLibInterface;
 
 namespace rdebug {
 
@@ -71,7 +71,7 @@ namespace rdebug {
 	/// @param _tc
 	/// @param _executable
 	///
-	uintptr_t	symbolResolverCreate(ModuleInfo* _moduleInfos, uint32_t _numInfos, Toolchain* _tc, const char* _executable);
+	uintptr_t	symbolResolverCreate(ModuleInfo* _moduleInfos, uint32_t _numInfos, const char* _executable);
 
 	/// Creates debug symbol resolver based on 
 	///
@@ -98,7 +98,7 @@ namespace rdebug {
 	/// @param _executablePath
 	///
 	uint64_t	symbolResolverGetAddressID(uintptr_t _resolver, uint64_t _address, bool* _isRTMdll = 0);
-	
+
 	/// Returns true if binary at the given path is 64bit
 	///
 	/// @param _path

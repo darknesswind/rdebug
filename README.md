@@ -1,11 +1,10 @@
-rdebug
-======
+<img src="https://github.com/milostosic/milostosic.github.io/raw/master/logo_libs/rdebug.png"/>
 
 [![Build Status](https://travis-ci.org/milostosic/rdebug.svg?branch=master)](https://travis-ci.org/milostosic/rdebug)
 [![Build status](https://ci.appveyor.com/api/projects/status/3cmmey9rd8qc512s?svg=true)](https://ci.appveyor.com/project/milostosic/rdebug)
 [![License](https://img.shields.io/badge/license-BSD--2%20clause-blue.svg)](https://github.com/milostosic/rdebug/blob/master/LICENSE)
 
-rdebug is a debug symbol resolution library.
+**rdebug** is a debug symbol resolution library.
 
 Source Code
 ======
@@ -35,7 +34,7 @@ Author
 ======
 
 The author of **rdebug** is Milos Tosic  
-[ <img src="https://github.com/milostosic/build/blob/master/img/twitter.png">](https://twitter.com/milostosic)[ <img src="https://github.com/milostosic/build/blob/master/img/linkedin.png">](https://www.linkedin.com/in/milostosic/)[ <img src="https://github.com/milostosic/build/blob/master/img/mail.png">](mailto:milostosic77@gmail.com)  
+[ <img src="https://github.com/milostosic/build/raw/gh-pages/images/twitter.png">](https://twitter.com/milostosic)[ <img src="https://github.com/milostosic/build/raw/gh-pages/images/mail.png">](mailto:milostosic77@gmail.com)  
 
 License (BSD 2-clause)
 ======

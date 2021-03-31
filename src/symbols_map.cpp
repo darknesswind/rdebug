@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                /// 
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -10,10 +10,11 @@
 
 namespace rdebug {
 
-Symbol::Symbol() :
-	m_offset(0),
-	m_size(0),
-	m_line(0)
+Symbol::Symbol()
+	: m_offset(0)
+	, m_size(0)
+	, m_line(0)
+	, m_nameHash(0)
 {
 }
 

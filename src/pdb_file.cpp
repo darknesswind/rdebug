@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                /// 
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -154,15 +154,15 @@ bool findSymbol(const char* _path, char _outSymbolPath[1024], const char* _symbo
 
 	wchar_t symStoreBuffer[4096];
 
-	// The file path is not needed in the search path, loadDataForExe will find from src path automatily.
+	// The file path is not needed in the search path, loadDataForExe will find from src path automatically.
 	// The semicolon is necessary between each path (or srv*).
 	char moduleNameM[512];
 	const char* srcPath = _path;
-	if (!srcPath || (strlen(srcPath) == 0))
+	if (!srcPath || (rtm::strLen(srcPath) == 0))
 	{
 		wchar_t moduleName[512];
 		GetModuleFileNameW(NULL, moduleName, sizeof(wchar_t)*512);
-		strcpy(moduleNameM, rtm::WideToMulti(moduleName));
+		rtm::strlCpy(moduleNameM, RTM_NUM_ELEMENTS(moduleName), rtm::WideToMulti(moduleName));
 		srcPath = moduleNameM;
 	}
 
@@ -179,16 +179,32 @@ bool findSymbol(const char* _path, char _outSymbolPath[1024], const char* _symbo
 	wchar_t outSymbolPath[1024];
 	DiaLoadCallBack callback(outSymbolPath);
 	callback.AddRef();
+
 	hr = pIDiaDataSource->loadDataForExe((LPOLESTR)rtm::MultiToWide(srcPath), (LPOLESTR)symStoreBuffer, &callback);
 
 	if (FAILED(hr))
 	{
 		pIDiaDataSource->Release();
+
+		// Hacky desperate attempt to find PDB file where EXE resides
+		const char* exe = rtm::strStr(srcPath, ".exe");
+		if (exe)
+		{
+			char pdb[1024];
+			rtm::strlCpy(pdb, RTM_NUM_ELEMENTS(pdb), srcPath);
+			rtm::strlCpy(&pdb[exe-srcPath], RTM_NUM_ELEMENTS(pdb) - uint32_t(exe-srcPath), ".pdb");
+			if (INVALID_FILE_ATTRIBUTES != GetFileAttributesA(pdb))
+			{
+				rtm::strlCpy(_outSymbolPath, 1024, pdb);
+				return true;
+			}
+		}
+
 		return false;
 	}
 
 	rtm::WideToMulti result(outSymbolPath);
-	strcpy(_outSymbolPath, result);
+	rtm::strlCpy(_outSymbolPath, 1024, result);
 	
 	pIDiaDataSource->Release();
 	return true;
@@ -233,7 +249,7 @@ void PDBFile::close()
 bool PDBFile::load(const char* _filename)
 {
 	if (!_filename) return false;
-	if (strlen(_filename) == 0) return false;
+	if (rtm::strLen(_filename) == 0) return false;
 
 	if (m_pIDiaDataSource == NULL)
 	{
@@ -246,11 +262,11 @@ bool PDBFile::load(const char* _filename)
 	bool bRet = false;
 
 	const char* ext = rtm::pathGetExt(_filename);
-	if (ext && (strcmp(ext, s_PDB_File_Extension)==0))
+	if (ext && (rtm::strCmp(ext, s_PDB_File_Extension)==0))
 	{
 		if (loadSymbolsFileWithoutValidation(_filename))
 		{
-			bRet = m_pIDiaSession->get_globalScope( &m_pIDiaSymbol )==S_OK?true:false;
+			bRet = m_pIDiaSession->get_globalScope( &m_pIDiaSymbol ) == S_OK ? true : false;
 
 			m_isStripped = false;
 			if( m_pIDiaSymbol )
@@ -267,63 +283,13 @@ bool PDBFile::load(const char* _filename)
 		}
 	}
 
-	if (bRet)
-	{
-		m_sFileName = _filename;
-
-		IDiaEnumSymbolsByAddr* symbols = 0;
-		HRESULT hr = m_pIDiaSession->getSymbolsByAddr(&symbols);
-		if (hr != S_OK) return false;
-
-		IDiaSymbol* symbolba = 0;
-		hr = symbols->symbolByAddr(1, 0, &symbolba);
-		if (hr != S_OK) return false;
-
-		IDiaSymbol* currFunction = 0;
-		DWORD numSymbolsFetched;
-		for(HRESULT moreChildren = symbols->Next(1, &currFunction, &numSymbolsFetched);
-			moreChildren == S_OK; moreChildren = symbols->Next(1, &currFunction, &numSymbolsFetched))
-
-		{
-			BSTR pName;
-			rdebug::Symbol symbol;
-
-			symbol.m_file = "";
-			symbol.m_name = "";
-
-			DWORD address;
-			hr = currFunction->get_relativeVirtualAddress(&address);
-			symbol.m_offset = address;
-
-			if(hr != S_OK)
-			{
-				currFunction->Release();
-				continue;
-			}
-		
-			unsigned long long	length;
-			hr = currFunction->get_length(&length);
-			if(hr != S_OK)
-			{
-				currFunction->Release();
-				continue;
-			}
-			symbol.m_size = length;
-			
-			m_symMap.addSymbol(symbol);
-			currFunction->Release();
-		}
-	}
-
-	m_symMap.sort();
-
 	return bRet;
 }
 
 void PDBFile::getSymbolByAddress(uint64_t _address, rdebug::StackFrame& _frame)
 {
-	strcpy(_frame.m_file, "Unknown");
-	strcpy(_frame.m_func, "Unknown");
+	rtm::strlCpy(_frame.m_file, RTM_NUM_ELEMENTS(_frame.m_file), "Unknown");
+	rtm::strlCpy(_frame.m_func, RTM_NUM_ELEMENTS(_frame.m_func), "Unknown");
 	_frame.m_line = 0;
 
 	if( m_pIDiaSession )
@@ -332,10 +298,8 @@ void PDBFile::getSymbolByAddress(uint64_t _address, rdebug::StackFrame& _frame)
 
 		_address -= 1;	// get address of previous instruction
 
-		if (!m_isStripped)
-			m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagFunction, &sym);
-		else
-			m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagPublicSymbol, &sym);
+		if (!sym)	m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagFunction, &sym);
+		if (!sym)	m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagPublicSymbol, &sym);
 
 		if (sym)
 		{
@@ -379,14 +343,14 @@ void PDBFile::getSymbolByAddress(uint64_t _address, rdebug::StackFrame& _frame)
 					_bstr_t a = SymName;
 					const wchar_t* nameC = a.operator const wchar_t*();
 					rtm::WideToMulti name(nameC);
-					strcpy(_frame.m_func, name.m_ptr);
+					rtm::strlCpy(_frame.m_func, RTM_NUM_ELEMENTS(_frame.m_func), name.m_ptr);
 
 					if (FileName)
 					{
 						a = FileName;
 						nameC = a.operator const wchar_t*();
 						rtm::WideToMulti file(nameC);
-						strcpy(_frame.m_file, file.m_ptr);
+						rtm::strlCpy(_frame.m_file, RTM_NUM_ELEMENTS(_frame.m_file), file.m_ptr);
 						_frame.m_line = LineNo;
 					}
 					else
@@ -419,13 +383,26 @@ void PDBFile::getSymbolByAddress(uint64_t _address, rdebug::StackFrame& _frame)
 	}
 }
 
-uintptr_t PDBFile::getSymbolID(uint64_t _address)
+uint64_t PDBFile::getSymbolID(uint64_t _address)
 {
-	rdebug::Symbol* sym = m_symMap.findSymbol(_address);
-	if (sym)
-		return (uintptr_t)sym->m_offset;
-	else
-		return 0;
+	DWORD ID = 0;
+	if (m_pIDiaSession)
+	{
+		IDiaSymbol* sym = NULL;
+
+		_address -= 1;	// get address of previous instruction
+
+		if (!sym)	m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagFunction, &sym);
+		if (!sym)	m_pIDiaSession->findSymbolByVA((ULONGLONG)_address, SymTagPublicSymbol, &sym);
+
+		if (sym)
+		{
+			sym->get_symIndexId(&ID);
+			sym->Release();
+		}
+	}
+
+	return ID;
 }
 
 bool PDBFile::loadSymbolsFileWithoutValidation(const char* _PdbFileName)

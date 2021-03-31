@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                /// 
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -26,7 +26,6 @@ class PDBFile
 		IDiaSession*		m_pIDiaSession;
 		IDiaSymbol*			m_pIDiaSymbol;
 		bool				m_isStripped;
-		rdebug::SymbolMap	m_symMap;
 
 	public:
 		PDBFile();
@@ -34,7 +33,7 @@ class PDBFile
 
 		bool		load(const char* _filename);
 		void		getSymbolByAddress(uint64_t _address, rdebug::StackFrame& _frame);
-		uintptr_t	getSymbolID(uint64_t _address);
+		uint64_t	getSymbolID(uint64_t _address);
 		void		close();
 
 	private:

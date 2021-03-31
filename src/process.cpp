@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------//
-/// Copyright (c) 2017 by Milos Tosic. All Rights Reserved.                /// 
+/// Copyright (c) 2019 by Milos Tosic. All Rights Reserved.                ///
 /// License: http://www.opensource.org/licenses/BSD-2-Clause               ///
 //--------------------------------------------------------------------------//
 
@@ -85,8 +85,8 @@ bool processInjectDLL(const char* _executablePath, const char* _DLLPath, const c
 	LPTHREAD_START_ROUTINE loadLib = (LPTHREAD_START_ROUTINE)GetProcAddress(kernel32, "LoadLibraryW");
 
 	char dllPath[2048];
-	strcpy(dllPath, _DLLPath);
-	rtm::pathRemoveRelative(dllPath);
+	rtm::strlCpy(dllPath, RTM_NUM_ELEMENTS(dllPath), _DLLPath);
+	rtm::pathCanonicalize(dllPath);
 
 	rtm::MultiToWide dllPathWide(dllPath);
 	size_t dllPathLen = wcslen(dllPathWide) + 1;
@@ -194,7 +194,7 @@ BOOL createChildProcess(const char* _cmdLine, PipeHandles* _handles, bool _redir
 	else
 		siStartInfo.dwFlags		= STARTF_USESTDHANDLES;
 
-	rtm::MultiToWide cmdLine(_cmdLine);
+	rtm::MultiToWide cmdLine(_cmdLine, false);
 	bSuccess = CreateProcessW(NULL, cmdLine.m_ptr, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);  
 
 	if (bSuccess) 
@@ -295,11 +295,11 @@ char* processGetOutputOf(const char* _cmdLine, bool _redirectIO)
 {
 	rtm_string buffer;
 	processGetOutputOf(_cmdLine, buffer, _redirectIO);
-	size_t len = strlen(buffer.c_str());
+	size_t len = rtm::strLen(buffer.c_str());
 	if (len)
 	{
 		char* res = (char*)rtm_alloc(sizeof(char) * (len + 1));
-		strcpy(res, buffer.c_str());
+		rtm::strlCpy(res, (uint32_t)(len + 1), buffer.c_str());
 		return res;
 	}
 	return 0;
